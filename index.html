@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI大模型全景图鉴 · LLM & 多模态 & 生成式AI Catalog</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --bg-0: #0a0e17;
@@ -611,6 +612,126 @@
   .type-badge.type-3d { background: rgba(0,230,168,0.12); color: var(--green); border: 1px solid rgba(0,230,168,0.25); }
   .type-badge.audio { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
 
+  /* Stats Section */
+  .stats-section {
+    margin-bottom: 28px;
+  }
+
+  .stats-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+
+  .stats-tab {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.25s ease;
+    font-family: inherit;
+  }
+
+  .stats-tab:hover {
+    color: var(--text-1);
+  }
+
+  .stats-tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    font-weight: 600;
+    box-shadow: var(--glow-cyan);
+  }
+
+  .stats-panel {
+    display: none;
+  }
+
+  .stats-panel.active {
+    display: block;
+    animation: fadeInUp 0.4s ease;
+  }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 16px;
+  }
+
+  .chart-card {
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .chart-card:hover {
+    border-color: var(--border-light);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .chart-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-0);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chart-card-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    border-radius: 2px;
+  }
+
+  .chart-card-desc {
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 16px;
+    margin-left: 11px;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 280px;
+  }
+
+  .chart-container.tall {
+    height: 360px;
+  }
+
+  .chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .chart-card.wide {
+    grid-column: span 2;
+  }
+
+  @media (max-width: 900px) {
+    .chart-card.wide {
+      grid-column: span 1;
+    }
+    .chart-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .model-name {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 18px;
@@ -1132,6 +1253,101 @@
 
     <!-- Main Content -->
     <main class="main-content">
+
+      <!-- Stats Section -->
+      <section class="stats-section">
+        <div class="stats-tabs">
+          <button class="stats-tab active" data-stats="overview">📊 总览</button>
+          <button class="stats-tab" data-stats="country">🌍 国家维度</button>
+          <button class="stats-tab" data-stats="company">🏢 厂商维度</button>
+          <button class="stats-tab" data-stats="capability">⚡ 能力对比</button>
+        </div>
+
+        <!-- Overview Panel -->
+        <div class="stats-panel active" id="panel-overview">
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-card-title">模型类型分布</div>
+              <div class="chart-card-desc">各大品类模型数量占比</div>
+              <div class="chart-container"><canvas id="chartTypeDistribution"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">开源 vs 闭源</div>
+              <div class="chart-card-desc">开源与闭源模型数量对比</div>
+              <div class="chart-container"><canvas id="chartSourceDistribution"></canvas></div>
+            </div>
+            <div class="chart-card wide">
+              <div class="chart-card-title">全球模型数量排行</div>
+              <div class="chart-card-desc">按国家/地区统计的模型总数</div>
+              <div class="chart-container"><canvas id="chartCountryBar"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Country Panel -->
+        <div class="stats-panel" id="panel-country">
+          <div class="chart-grid">
+            <div class="chart-card wide">
+              <div class="chart-card-title">各国模型品类分布</div>
+              <div class="chart-card-desc">堆叠柱状图：不同国家在各模型类型上的布局</div>
+              <div class="chart-container tall"><canvas id="chartCountryStacked"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">开源率对比</div>
+              <div class="chart-card-desc">各国开源模型占比</div>
+              <div class="chart-container"><canvas id="chartCountryOpenRate"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">中国 vs 美国</div>
+              <div class="chart-card-desc">两大AI强国模型品类对比</div>
+              <div class="chart-container"><canvas id="chartCNvsUS"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Company Panel -->
+        <div class="stats-panel" id="panel-company">
+          <div class="chart-grid">
+            <div class="chart-card wide">
+              <div class="chart-card-title">厂商模型数量排行 Top 10</div>
+              <div class="chart-card-desc">模型产品线最丰富的厂商</div>
+              <div class="chart-container tall"><canvas id="chartCompanyBar"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">字节跳动产品线</div>
+              <div class="chart-card-desc">Seed 团队各品类模型分布</div>
+              <div class="chart-container"><canvas id="chartByteDance"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">Google DeepMind 产品线</div>
+              <div class="chart-card-desc">Gemini / Veo / 图像等多品类布局</div>
+              <div class="chart-container"><canvas id="chartGoogle"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Capability Panel -->
+        <div class="stats-panel" id="panel-capability">
+          <div class="chart-grid">
+            <div class="chart-card wide">
+              <div class="chart-card-title">头部厂商能力雷达图</div>
+              <div class="chart-card-desc">语言 / 图像 / 视频 / 多模态 / 3D / 音频 六维对比</div>
+              <div class="chart-container tall"><canvas id="chartRadar"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">上下文长度对比</div>
+              <div class="chart-card-desc">主要语言模型上下文窗口 (K tokens)</div>
+              <div class="chart-container tall"><canvas id="chartContext"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">参数量对比</div>
+              <div class="chart-card-desc">已知参数量的开源 MoE 模型 (B)</div>
+              <div class="chart-container tall"><canvas id="chartParams"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div class="results-bar">
         <div class="results-count">
           找到 <strong id="resultCount">0</strong> 个模型
@@ -1695,6 +1911,623 @@ let state = {
   view: 'grid'
 };
 
+// ============== CHARTS ==============
+let charts = {};
+
+const typeColors = {
+  llm: '#00e5ff',
+  image: '#ff6b9d',
+  video: '#ffaa33',
+  multimodal: '#7c5cff',
+  '3d': '#00e6a8',
+  audio: '#a855f7'
+};
+
+const typeBgColors = {
+  llm: 'rgba(0, 229, 255, 0.7)',
+  image: 'rgba(255, 107, 157, 0.7)',
+  video: 'rgba(255, 170, 51, 0.7)',
+  multimodal: 'rgba(124, 92, 255, 0.7)',
+  '3d': 'rgba(0, 230, 168, 0.7)',
+  audio: 'rgba(168, 85, 247, 0.7)'
+};
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 800, easing: 'easeOutQuart' },
+  plugins: {
+    legend: {
+      labels: {
+        color: '#a8b3cc',
+        font: { family: "'Noto Sans SC', sans-serif", size: 12 },
+        padding: 12,
+        usePointStyle: true,
+        pointStyle: 'circle'
+      }
+    },
+    tooltip: {
+      backgroundColor: 'rgba(15, 20, 32, 0.95)',
+      titleColor: '#e8edf7',
+      bodyColor: '#a8b3cc',
+      borderColor: '#2a3450',
+      borderWidth: 1,
+      padding: 12,
+      cornerRadius: 8,
+      titleFont: { family: "'Space Grotesk', sans-serif", size: 13, weight: '600' },
+      bodyFont: { family: "'Noto Sans SC', sans-serif", size: 12 }
+    }
+  }
+};
+
+function initCharts() {
+  if (typeof Chart === 'undefined') return;
+
+  Chart.defaults.color = '#6b7794';
+  Chart.defaults.borderColor = 'rgba(42, 52, 80, 0.5)';
+  Chart.defaults.font.family = "'Noto Sans SC', sans-serif";
+
+  drawTypeDistribution();
+  drawSourceDistribution();
+  drawCountryBar();
+  drawCountryStacked();
+  drawCountryOpenRate();
+  drawCNvsUS();
+  drawCompanyBar();
+  drawByteDance();
+  drawGoogle();
+  drawRadar();
+  drawContext();
+  drawParams();
+}
+
+// Overview: 类型分布环形图
+function drawTypeDistribution() {
+  const ctx = document.getElementById('chartTypeDistribution');
+  if (!ctx) return;
+  const counts = {};
+  models.forEach(m => { counts[m.type] = (counts[m.type] || 0) + 1; });
+  const labels = Object.keys(counts).map(t => typeLabels[t] || t);
+  const data = Object.keys(counts).map(t => counts[t]);
+  const colors = Object.keys(counts).map(t => typeColors[t] || '#666');
+
+  charts.typeDist = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: '#0f1420',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '62%',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'right' }
+      }
+    }
+  });
+}
+
+// Overview: 开源闭源饼图
+function drawSourceDistribution() {
+  const ctx = document.getElementById('chartSourceDistribution');
+  if (!ctx) return;
+  const open = models.filter(m => m.source === 'open').length;
+  const closed = models.filter(m => m.source === 'closed').length;
+
+  charts.sourceDist = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['开源模型', '闭源模型'],
+      datasets: [{
+        data: [open, closed],
+        backgroundColor: ['rgba(0, 230, 168, 0.75)', 'rgba(124, 92, 255, 0.75)'],
+        borderColor: '#0f1420',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '62%',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'right' }
+      }
+    }
+  });
+}
+
+// Overview: 国家柱状图
+function drawCountryBar() {
+  const ctx = document.getElementById('chartCountryBar');
+  if (!ctx) return;
+  const counts = {};
+  models.forEach(m => { counts[m.country] = (counts[m.country] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const labels = sorted.map(([c]) => c);
+  const data = sorted.map(([, v]) => v);
+  const colors = labels.map(c => c === '中国' || c === '美国' ? '#00e5ff' : 'rgba(124, 92, 255, 0.6)');
+
+  charts.countryBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '模型数量',
+        data,
+        backgroundColor: colors,
+        borderRadius: 6,
+        barThickness: 28
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 11 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 12 } }
+        }
+      }
+    }
+  });
+}
+
+// Country: 堆叠柱状图
+function drawCountryStacked() {
+  const ctx = document.getElementById('chartCountryStacked');
+  if (!ctx) return;
+  const types = Object.keys(typeLabels);
+  const countries = [...new Set(models.map(m => m.country))].sort((a, b) =>
+    models.filter(m => m.country === b).length - models.filter(m => m.country === a).length
+  );
+
+  const datasets = types.map(type => ({
+    label: typeLabels[type],
+    data: countries.map(country =>
+      models.filter(m => m.country === country && m.type === type).length
+    ),
+    backgroundColor: typeBgColors[type],
+    borderRadius: 2,
+    stack: 'stack1'
+  }));
+
+  charts.countryStacked = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: countries, datasets },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'top' }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 12 } }
+        },
+        y: {
+          stacked: true,
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// Country: 开源率
+function drawCountryOpenRate() {
+  const ctx = document.getElementById('chartCountryOpenRate');
+  if (!ctx) return;
+  const countries = [...new Set(models.map(m => m.country))];
+  const data = countries.map(c => {
+    const total = models.filter(m => m.country === c).length;
+    const open = models.filter(m => m.country === c && m.source === 'open').length;
+    return total >= 2 ? Math.round((open / total) * 100) : null;
+  }).filter((v, i) => {
+    const total = models.filter(m => m.country === countries[i]).length;
+    return total >= 2;
+  });
+  const validCountries = countries.filter(c => models.filter(m => m.country === c).length >= 2);
+  const sorted = validCountries.map((c, i) => ({ country: c, rate: data[i] }))
+    .sort((a, b) => b.rate - a.rate);
+
+  charts.countryOpen = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => s.country),
+      datasets: [{
+        label: '开源率 %',
+        data: sorted.map(s => s.rate),
+        backgroundColor: 'rgba(0, 230, 168, 0.65)',
+        borderRadius: 6,
+        barThickness: 24
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          max: 100,
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 11 }, callback: v => v + '%' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 12 } }
+        }
+      }
+    }
+  });
+}
+
+// Country: 中美对比
+function drawCNvsUS() {
+  const ctx = document.getElementById('chartCNvsUS');
+  if (!ctx) return;
+  const types = Object.keys(typeLabels);
+  const cn = types.map(t => models.filter(m => m.country === '中国' && m.type === t).length);
+  const us = types.map(t => models.filter(m => m.country === '美国' && m.type === t).length);
+
+  charts.cnvsus = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: types.map(t => typeLabels[t]),
+      datasets: [
+        {
+          label: '中国',
+          data: cn,
+          backgroundColor: 'rgba(255, 107, 157, 0.65)',
+          borderRadius: 4
+        },
+        {
+          label: '美国',
+          data: us,
+          backgroundColor: 'rgba(0, 229, 255, 0.65)',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'top' }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 10 }, maxRotation: 45 }
+        },
+        y: {
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// Company: Top 10 柱状图
+function drawCompanyBar() {
+  const ctx = document.getElementById('chartCompanyBar');
+  if (!ctx) return;
+  const counts = {};
+  models.forEach(m => { counts[m.company] = (counts[m.company] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const labels = sorted.map(([c]) => c);
+  const data = sorted.map(([, v]) => v);
+  const colors = labels.map(c => {
+    if (c.includes('字节')) return '#ff0050';
+    if (c.includes('OpenAI')) return '#10a37f';
+    if (c.includes('Google')) return '#4285f4';
+    if (c.includes('腾讯')) return '#00c8ff';
+    if (c.includes('智谱')) return '#0066ff';
+    if (c.includes('快手')) return '#ff6600';
+    if (c.includes('通义')) return '#ff6a00';
+    if (c.includes('DeepSeek')) return '#4d6bfe';
+    if (c.includes('Anthropic')) return '#cc785d';
+    return 'rgba(124, 92, 255, 0.6)';
+  });
+
+  charts.companyBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '模型数量',
+        data,
+        backgroundColor: colors,
+        borderRadius: 6,
+        barThickness: 22
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 11 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// Company: 字节跳动产品线
+function drawByteDance() {
+  const ctx = document.getElementById('chartByteDance');
+  if (!ctx) return;
+  const bytedance = models.filter(m => m.company === '字节跳动 Seed');
+  const counts = {};
+  bytedance.forEach(m => { counts[m.type] = (counts[m.type] || 0) + 1; });
+  const labels = Object.keys(counts).map(t => typeLabels[t] || t);
+  const data = Object.keys(counts).map(t => counts[t]);
+  const colors = Object.keys(counts).map(t => typeColors[t] || '#666');
+
+  charts.bytedance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: '#0f1420',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '58%',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'right', labels: { ...chartDefaults.plugins.legend.labels, font: { size: 11 }, padding: 8 } }
+      }
+    }
+  });
+}
+
+// Company: Google 产品线
+function drawGoogle() {
+  const ctx = document.getElementById('chartGoogle');
+  if (!ctx) return;
+  const google = models.filter(m => m.company === 'Google DeepMind');
+  const counts = {};
+  google.forEach(m => { counts[m.type] = (counts[m.type] || 0) + 1; });
+  const labels = Object.keys(counts).map(t => typeLabels[t] || t);
+  const data = Object.keys(counts).map(t => counts[t]);
+  const colors = Object.keys(counts).map(t => typeColors[t] || '#666');
+
+  charts.google = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: '#0f1420',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '58%',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'right', labels: { ...chartDefaults.plugins.legend.labels, font: { size: 11 }, padding: 8 } }
+      }
+    }
+  });
+}
+
+// Capability: 雷达图
+function drawRadar() {
+  const ctx = document.getElementById('chartRadar');
+  if (!ctx) return;
+
+  // 根据各厂商在每个品类的模型数量和质量综合评分（1-10）
+  const capabilityData = {
+    labels: ['语言模型', '图像生成', '视频生成', '多模态', '3D生成', '音频生成'],
+    datasets: [
+      {
+        label: '字节跳动 Seed',
+        data: [8.5, 9, 9.5, 8, 8.5, 9],
+        borderColor: '#ff0050',
+        backgroundColor: 'rgba(255, 0, 80, 0.12)',
+        pointBackgroundColor: '#ff0050',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
+        borderWidth: 2
+      },
+      {
+        label: 'OpenAI',
+        data: [10, 7.5, 9, 8, 5, 4],
+        borderColor: '#10a37f',
+        backgroundColor: 'rgba(16, 163, 127, 0.1)',
+        pointBackgroundColor: '#10a37f',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
+        borderWidth: 2
+      },
+      {
+        label: 'Google DeepMind',
+        data: [9.5, 8.5, 9.5, 10, 5, 4],
+        borderColor: '#4285f4',
+        backgroundColor: 'rgba(66, 133, 244, 0.1)',
+        pointBackgroundColor: '#4285f4',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
+        borderWidth: 2
+      },
+      {
+        label: '腾讯混元',
+        data: [7, 7, 6.5, 7, 7.5, 5],
+        borderColor: '#00c8ff',
+        backgroundColor: 'rgba(0, 200, 255, 0.1)',
+        pointBackgroundColor: '#00c8ff',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
+        borderWidth: 2
+      }
+    ]
+  };
+
+  charts.radar = new Chart(ctx, {
+    type: 'radar',
+    data: capabilityData,
+    options: {
+      ...chartDefaults,
+      scales: {
+        r: {
+          min: 0,
+          max: 10,
+          grid: { color: 'rgba(42, 52, 80, 0.5)' },
+          angleLines: { color: 'rgba(42, 52, 80, 0.5)' },
+          pointLabels: {
+            color: '#a8b3cc',
+            font: { size: 12, family: "'Noto Sans SC', sans-serif" }
+          },
+          ticks: {
+            color: '#6b7794',
+            backdropColor: 'transparent',
+            font: { size: 10 },
+            stepSize: 2
+          }
+        }
+      },
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { ...chartDefaults.plugins.legend, position: 'top' }
+      },
+      elements: {
+        line: { tension: 0.15 }
+      }
+    }
+  });
+}
+
+// Capability: 上下文长度对比
+function drawContext() {
+  const ctx = document.getElementById('chartContext');
+  if (!ctx) return;
+  const llms = models.filter(m => m.type === 'llm' && m.context.includes('K'))
+    .map(m => ({
+      name: m.name,
+      ctx: parseInt(m.context.replace(/,/g, '').replace('K tokens', '').replace('K', ''))
+    }))
+    .sort((a, b) => b.ctx - a.ctx)
+    .slice(0, 10);
+
+  charts.context = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: llms.map(m => m.name),
+      datasets: [{
+        label: '上下文 (K tokens)',
+        data: llms.map(m => m.ctx),
+        backgroundColor: llms.map(m => m.ctx > 500 ? 'rgba(0, 229, 255, 0.75)' : 'rgba(124, 92, 255, 0.5)'),
+        borderRadius: 5,
+        barThickness: 18
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 10 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// Capability: 参数量对比
+function drawParams() {
+  const ctx = document.getElementById('chartParams');
+  if (!ctx) return;
+  const llms = models.filter(m =>
+    m.type === 'llm' && m.params.includes('总') && m.params.includes('B')
+  ).map(m => {
+    const match = m.params.match(/([\d.]+)B\s*总/);
+    return { name: m.name, params: match ? parseFloat(match[1]) : null };
+  }).filter(m => m.params).sort((a, b) => b.params - a.params).slice(0, 10);
+
+  charts.params = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: llms.map(m => m.name),
+      datasets: [{
+        label: '总参数量 (B)',
+        data: llms.map(m => m.params),
+        backgroundColor: 'rgba(255, 170, 51, 0.7)',
+        borderRadius: 5,
+        barThickness: 18
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(42, 52, 80, 0.3)' },
+          ticks: { color: '#6b7794', font: { size: 10 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#a8b3cc', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
 // ============== INIT ==============
 function init() {
   populateCountries();
@@ -1702,6 +2535,7 @@ function init() {
   updateStats();
   renderModels();
   setupEventListeners();
+  initCharts();
 }
 
 // ============== POPULATE FILTERS ==============
@@ -1969,6 +2803,16 @@ function getTypeClass(type) {
 
 // ============== EVENTS ==============
 function setupEventListeners() {
+  // Stats tabs
+  document.querySelectorAll('.stats-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.stats-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.stats).classList.add('active');
+    });
+  });
+
   // Type pills
   document.querySelectorAll('.type-pill').forEach(pill => {
     pill.addEventListener('click', () => {
