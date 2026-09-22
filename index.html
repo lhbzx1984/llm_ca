@@ -2398,6 +2398,13 @@ function drawCompanyBar() {
     if (c.includes('通义')) return '#ff6a00';
     if (c.includes('DeepSeek')) return '#4d6bfe';
     if (c.includes('Anthropic')) return '#cc785d';
+    if (c.includes('Meta')) return '#1877f2';
+    if (c.includes('xAI')) return '#1d9bf0';
+    if (c.includes('Mistral')) return '#ff7000';
+    if (c.includes('面壁')) return '#00c3ff';
+    if (c.includes('阶跃')) return '#0066ff';
+    if (c.includes('百度')) return '#2932e1';
+    if (c.includes('LG')) return '#a50034';
     return 'rgba(124, 92, 255, 0.6)';
   });
 
@@ -2507,13 +2514,13 @@ function drawRadar() {
   const ctx = document.getElementById('chartRadar');
   if (!ctx) return;
 
-  // 根据各厂商在每个品类的模型数量和质量综合评分（1-10）
+  // 根据2026年9月各厂商在各品类的模型布局和行业评价综合评分（1-10）
   const capabilityData = {
     labels: ['语言模型', '图像生成', '视频生成', '多模态', '3D生成', '音频生成'],
     datasets: [
       {
         label: '字节跳动 Seed',
-        data: [8.5, 9, 9.5, 8, 8.5, 9],
+        data: [8.5, 9, 9.5, 8.5, 9, 9.5],
         borderColor: '#ff0050',
         backgroundColor: 'rgba(255, 0, 80, 0.12)',
         pointBackgroundColor: '#ff0050',
@@ -2523,7 +2530,7 @@ function drawRadar() {
       },
       {
         label: 'OpenAI',
-        data: [10, 7.5, 9, 8, 5, 4],
+        data: [10, 8.5, 9, 10, 5, 7],
         borderColor: '#10a37f',
         backgroundColor: 'rgba(16, 163, 127, 0.1)',
         pointBackgroundColor: '#10a37f',
@@ -2533,7 +2540,7 @@ function drawRadar() {
       },
       {
         label: 'Google DeepMind',
-        data: [9.5, 8.5, 9.5, 10, 5, 4],
+        data: [9.5, 8.5, 9, 10, 5, 8.5],
         borderColor: '#4285f4',
         backgroundColor: 'rgba(66, 133, 244, 0.1)',
         pointBackgroundColor: '#4285f4',
@@ -2543,10 +2550,20 @@ function drawRadar() {
       },
       {
         label: '腾讯混元',
-        data: [7, 7, 6.5, 7, 7.5, 5],
+        data: [8, 8, 7, 7.5, 8.5, 5],
         borderColor: '#00c8ff',
         backgroundColor: 'rgba(0, 200, 255, 0.1)',
         pointBackgroundColor: '#00c8ff',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
+        borderWidth: 2
+      },
+      {
+        label: 'Meta',
+        data: [9, 6, 5, 8.5, 5, 6],
+        borderColor: '#1877f2',
+        backgroundColor: 'rgba(24, 119, 242, 0.1)',
+        pointBackgroundColor: '#1877f2',
         pointBorderColor: '#fff',
         pointRadius: 4,
         borderWidth: 2
@@ -2592,13 +2609,14 @@ function drawRadar() {
 function drawContext() {
   const ctx = document.getElementById('chartContext');
   if (!ctx) return;
-  const llms = models.filter(m => m.type === 'llm' && m.context.includes('K'))
+  const llms = models.filter(m => (m.type === 'llm' || m.type === 'multimodal') && m.context.includes('K'))
     .map(m => ({
       name: m.name,
-      ctx: parseInt(m.context.replace(/,/g, '').replace('K tokens', '').replace('K', ''))
+      ctx: parseInt(m.context.replace(/,/g, '').replace('K tokens', '').replace('K', '').replace(/\D.*$/, ''))
     }))
+    .filter(m => !isNaN(m.ctx) && m.ctx > 0)
     .sort((a, b) => b.ctx - a.ctx)
-    .slice(0, 10);
+    .slice(0, 12);
 
   charts.context = new Chart(ctx, {
     type: 'bar',
@@ -2638,11 +2656,11 @@ function drawParams() {
   const ctx = document.getElementById('chartParams');
   if (!ctx) return;
   const llms = models.filter(m =>
-    m.type === 'llm' && m.params.includes('总') && m.params.includes('B')
+    (m.type === 'llm' || m.type === 'multimodal') && m.params.includes('总') && m.params.includes('B')
   ).map(m => {
     const match = m.params.match(/([\d.]+)B\s*总/);
     return { name: m.name, params: match ? parseFloat(match[1]) : null };
-  }).filter(m => m.params).sort((a, b) => b.params - a.params).slice(0, 10);
+  }).filter(m => m.params).sort((a, b) => b.params - a.params).slice(0, 12);
 
   charts.params = new Chart(ctx, {
     type: 'bar',
